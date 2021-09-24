@@ -8,22 +8,22 @@
 
 Windows:
 
-Поместите файл ```dnevnikrupy.py``` в папку с вашим проектом
+Поместите файл ```dnevnikru.py``` в папку с вашим проектом
 ```
-import dnevnikrupy
+import dnevnikru
 ```
 
 ## Примеры использования
 
 ```
-import dnevnikrupy
+import dnevnikru
 
 dn = dnevnik(login='Your login', password='Your password')
 
 homework = dn.homework(studyYear=2020, datefrom='01.12.2020', dateto='30.12.2020')
 marks = dn.marks(index=0, period=1)
-11_b = dn.searchpeople(klass='11Б')
-birthdays = dn.birthdays(day='01', month='09')
+11_b = dn.searchpeople(grade='11Б')
+birthdays = dn.birthdays(day=9, month=5)
 ```
 
 _Ещё больше примеров использования на странице [Wiki][wiki]._
