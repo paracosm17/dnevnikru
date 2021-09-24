@@ -16,9 +16,9 @@ import dnevnikru
 ## Примеры использования
 
 ```
-import dnevnikru
+from dnevnikru import Dnevnik
 
-dn = dnevnik(login='Your login', password='Your password')
+dn = Dnevnik(login='Your login', password='Your password')
 
 homework = dn.homework(studyYear=2020, datefrom='01.12.2020', dateto='30.12.2020')
 marks = dn.marks(index=0, period=1)
