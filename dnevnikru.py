@@ -125,7 +125,7 @@ class Dnevnik:
 
     def searchpeople(self, group="", name="", grade=""):
         if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
-            raise DnevnikError("Incorrect group", "Group error")
+            raise DnevnikError("Неверная группа!", "Group error")
 
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
