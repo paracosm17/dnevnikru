@@ -16,6 +16,7 @@ class Defaults(enum.Enum):
     group = 'all'
     base_link = "https://schools.dnevnik.ru/"
     hw_link = base_link + "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=" + choose
+    marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
 
 
 class DnevnikError(Exception):
@@ -33,7 +34,7 @@ class Utils:
             pages = all_pages.find_all('li')
             last_page = pages[-1].text
             return last_page
-        except DnevnikError:
+        except Exception:
             last_page = None
             return last_page
 
@@ -71,11 +72,12 @@ class Dnevnik:
         except DnevnikError:
             raise DnevnikError('Invalid login data or wrong auth method', 'LoginError')
 
-    def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value, studyyear=Defaults.studyYear.value):
+    def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
+                 studyyear=Defaults.studyYear.value):
         if len(datefrom) != 10 or len(dateto) != 10:
             raise DnevnikError("Incorrect dateto or datefrom", "Parameters error")
-        if str(studyyear) not in datefrom or str(studyyear) not in dateto:
-            raise DnevnikError("StudyYear must be in dateto or in datefrom", "Parameters error")
+        if str(studyyear) not in datefrom:
+            raise DnevnikError("StudyYear must be in datefrom", "Parameters error")
 
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
@@ -107,6 +109,13 @@ class Dnevnik:
             except DnevnikError:
                 return "Домашних заданий не найдено!"
 
+    def marks(self, index, period):
+        link = Defaults.marks_link.value.format(self.school, index, period)
+        marks_response = self.main_session.get(link, headers={"Referer": link}).text
+        try:
+            return Utils.save_content(response=marks_response, class2='grid gridLines vam marks')
+        except DnevnikError:
+            raise DnevnikError("One of parameters is wrong!", "Parameters Error")
 
 
 
