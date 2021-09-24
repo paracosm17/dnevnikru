@@ -109,7 +109,7 @@ class Dnevnik:
                                    '\r\n                \r\n\t\t\t\t    \n', '')]
                     subjects.append(subject)
                 return subjects
-            except DnevnikError:
+            except Exception:
                 return "Домашних заданий не найдено!"
 
     def marks(self, index="", period=""):
@@ -146,8 +146,8 @@ class Dnevnik:
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
                     members.append(member)
                 return members
-            except DnevnikError:
-                raise DnevnikError("По этому запросу ничего не найдено", "Search error")
+            except Exception:
+                return ["По этому запросу ничего не найдено"]
 
     def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
         if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
