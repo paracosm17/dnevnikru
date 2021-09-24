@@ -109,11 +109,14 @@ class Dnevnik:
             except DnevnikError:
                 return "Домашних заданий не найдено!"
 
-    def marks(self, index, period):
+    def marks(self, index=None, period=None):
         link = Defaults.marks_link.value.format(self.school, index, period)
         marks_response = self.main_session.get(link, headers={"Referer": link}).text
         try:
-            return Utils.save_content(response=marks_response, class2='grid gridLines vam marks')
+            marks = Utils.save_content(response=marks_response, class2='grid gridLines vam marks')
+            for mark in marks:
+                mark[2] = mark[2].replace(" ", "")
+            return marks
         except DnevnikError:
             raise DnevnikError("One of parameters is wrong!", "Parameters Error")
 
