@@ -12,12 +12,14 @@ class Defaults(enum.Enum):
     dateFrom = date.today().strftime("%d.%m.%Y")
     dateTo = (date.today() + timedelta(days=10)).strftime("%d.%m.%Y")
     studyYear = date.today().strftime("%Y")
+    day = date.today().day
+    month = date.today().month
     choose = '%D0%9F%D0%BE%D0%BA%D0%B0%D0%B7%D0%B0%D1%82%D1%8C'
-    group = 'all'
     base_link = "https://schools.dnevnik.ru/"
     hw_link = base_link + "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=" + choose
     marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
     searchpeople_link = base_link + "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"
+    birthdays_link = base_link + "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"
 
 
 class DnevnikError(Exception):
@@ -35,7 +37,7 @@ class Utils:
             pages = all_pages.find_all('li')
             last_page = pages[-1].text
             return last_page
-        except DnevnikError:
+        except Exception:
             last_page = None
             return last_page
 
@@ -110,7 +112,7 @@ class Dnevnik:
             except DnevnikError:
                 return "Домашних заданий не найдено!"
 
-    def marks(self, index=None, period=None):
+    def marks(self, index="", period=""):
         link = Defaults.marks_link.value.format(self.school, index, period)
         marks_response = self.main_session.get(link, headers={"Referer": link}).text
         try:
@@ -121,8 +123,8 @@ class Dnevnik:
         except DnevnikError:
             raise DnevnikError("One of parameters is wrong!", "Parameters Error")
 
-    def searchpeople(self, group=None, name=None, grade=None):
-        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators']:
+    def searchpeople(self, group="", name="", grade=""):
+        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
             raise DnevnikError("Incorrect group", "Group error")
 
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
@@ -146,6 +148,33 @@ class Dnevnik:
                 return members
             except DnevnikError:
                 raise DnevnikError("По этому запросу ничего не найдено", "Search error")
+
+    def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
+        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
+            raise DnevnikError("Incorrect group", "Group error")
+        if day not in list(range(1, 32)) or month not in list(range(1, 13)):
+            raise DnevnikError("Incorrect day or month", "Date error")
+
+        link = Defaults.birthdays_link.value.format(self.school, day, month, group)
+        birthdays_response = self.main_session.get(link).text
+        last_page = Utils.last_page(birthdays_response)
+
+        if last_page is not None:
+            birthdays = []
+            for page in range(1, int(last_page) + 1):
+                birthdays_response = self.main_session.get(link+f"&page={page}").text
+                for i in Utils.save_content(birthdays_response, class2='people grid'):
+                    birthdays.append(i[1].split('\n')[1])
+            return birthdays
+        if last_page is None:
+            birthdays = []
+            if "в школе именинников нет" in birthdays_response:
+                return [f"К сожалению, {day}.{month} среди этой группы в школе именинников нет."]
+            else:
+                for i in Utils.save_content(birthdays_response, class2='people grid'):
+                    birthdays.append(i[1].split('\n')[1])
+                return birthdays
+
 
 
 
