@@ -17,6 +17,7 @@ class Defaults(enum.Enum):
     base_link = "https://schools.dnevnik.ru/"
     hw_link = base_link + "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=" + choose
     marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
+    searchpeople_link = base_link + "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"
 
 
 class DnevnikError(Exception):
@@ -34,7 +35,7 @@ class Utils:
             pages = all_pages.find_all('li')
             last_page = pages[-1].text
             return last_page
-        except Exception:
+        except DnevnikError:
             last_page = None
             return last_page
 
@@ -119,6 +120,34 @@ class Dnevnik:
             return marks
         except DnevnikError:
             raise DnevnikError("One of parameters is wrong!", "Parameters Error")
+
+    def searchpeople(self, group=None, name=None, grade=None):
+        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators']:
+            raise DnevnikError("Incorrect group", "Group error")
+
+        link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
+        searchpeople_response = self.main_session.get(link).text
+        last_page = Utils.last_page(searchpeople_response)
+
+        if last_page is not None:
+            members = []
+            for page in range(1, int(last_page) + 1):
+                members_response = self.main_session.get(link + f"&page={page}").text
+                for content in Utils.save_content(members_response, class2='people grid'):
+                    member = [content[1].split('\n')[1], content[1].split('\n')[2]]
+                    members.append(member)
+            return members
+        if last_page is None:
+            members = []
+            try:
+                for content in Utils.save_content(searchpeople_response, class2='people grid'):
+                    member = [content[1].split('\n')[1], content[1].split('\n')[2]]
+                    members.append(member)
+                return members
+            except DnevnikError:
+                raise DnevnikError("По этому запросу ничего не найдено", "Search error")
+
+
 
 
 
