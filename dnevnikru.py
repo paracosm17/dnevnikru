@@ -1,13 +1,13 @@
-from  datetime import *
 import enum
 import fake_useragent
 import requests
+from datetime import *
 from bs4 import BeautifulSoup
 
 
 class Defaults(enum.Enum):
     """
-    Дефолтные значения для параметров
+    Дефолтные значения для параметров и ссылок
     """
     dateFrom = date.today().strftime("%d.%m.%Y")
     dateTo = (date.today() + timedelta(days=10)).strftime("%d.%m.%Y")
@@ -73,14 +73,14 @@ class Dnevnik:
             school = self.main_session.cookies['t0']
             self.school = school
         except DnevnikError:
-            raise DnevnikError('Invalid login data or wrong auth method', 'LoginError')
+            raise DnevnikError('Неверный логин или пароль!', 'LoginError')
 
     def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
                  studyyear=Defaults.studyYear.value):
         if len(datefrom) != 10 or len(dateto) != 10:
-            raise DnevnikError("Incorrect dateto or datefrom", "Parameters error")
+            raise DnevnikError("Неверно указаны dateto или datefrom", "Parameters error")
         if str(studyyear) not in datefrom:
-            raise DnevnikError("StudyYear must be in datefrom", "Parameters error")
+            raise DnevnikError("StudyYear должен соответствовать datefrom", "Parameters error")
 
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
@@ -121,7 +121,7 @@ class Dnevnik:
                 mark[2] = mark[2].replace(" ", "")
             return marks
         except DnevnikError:
-            raise DnevnikError("One of parameters is wrong!", "Parameters Error")
+            raise DnevnikError("Какой-то из параметров введен неверно", "Parameters Error")
 
     def searchpeople(self, group="", name="", grade=""):
         if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
@@ -174,14 +174,3 @@ class Dnevnik:
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
-
-
-
-
-
-
-
-
-
-
-
