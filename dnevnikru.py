@@ -72,7 +72,7 @@ class Dnevnik:
         try:
             school = self.main_session.cookies['t0']
             self.school = school
-        except DnevnikError:
+        except Exception:
             raise DnevnikError('Неверный логин или пароль!', 'LoginError')
 
     def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
@@ -110,7 +110,7 @@ class Dnevnik:
                     subjects.append(subject)
                 return subjects
             except Exception:
-                return "Домашних заданий не найдено!"
+                return ["Домашних заданий не найдено!"]
 
     def marks(self, index="", period=""):
         link = Defaults.marks_link.value.format(self.school, index, period)
