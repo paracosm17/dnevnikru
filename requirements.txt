@@ -2,4 +2,3 @@ requests
 fake-useragent
 lxml
 bs4
-pandas
