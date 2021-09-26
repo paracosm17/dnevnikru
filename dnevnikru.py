@@ -76,7 +76,10 @@ class Dnevnik:
             raise DnevnikError('Неверный логин или пароль!', 'LoginError')
 
     def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
-                 studyyear=Defaults.studyYear.value):
+                 studyyear=Defaults.studyYear.value, days=10):
+        if datefrom != Defaults.dateFrom.value or days != 10:
+            dt = datetime.strptime(datefrom, '%d.%m.%Y')
+            dateto = (dt + timedelta(days=days)).strftime("%d.%m.%Y")
         if len(datefrom) != 10 or len(dateto) != 10:
             raise DnevnikError("Неверно указаны dateto или datefrom", "Parameters error")
         if str(studyyear) not in datefrom:
