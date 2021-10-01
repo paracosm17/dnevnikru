@@ -93,10 +93,9 @@ class Dnevnik:
                 homework_response = self.main_session.get(link+f"&page={page}", headers={"Referer": link}).text
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2],
-                               i[0].replace('\n\r\n                        ', '').replace(
-                                   '\r\n                    \n', ''),
-                               i[3].replace('\n\n', '').replace('\xa0', ' ').replace('\r\n        \t\t\t ', '').replace(
-                                   '\r\n                \r\n\t\t\t\t    \n', '')]
+                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
+                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
+                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
             return subjects
         if last_page is None:
@@ -104,9 +103,9 @@ class Dnevnik:
                 subjects = []
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2],
-                               i[0].replace('\n\r\n' + " " * 24, '').replace('\r\n' + " " * 20 + '\n', ''),
-                               i[3].replace('\n\n', '').replace('\xa0', ' ').replace('\r\n' + " " * 8 + '\t\t\t ', '').
-                               replace('\r\n' + " " * 16 + '\r\n\t\t\t\t    \n', '')]
+                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
+                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
+                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
                 return subjects
             except Exception:
