@@ -200,6 +200,4 @@ class Dnevnik:
         link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
             user_id, self.school, Defaults.studyYear.value, week)
         week_response = self.main_session.get(link).text
-        with open("week.html", "w", encoding="utf-8") as f:
-            f.write(week_response)
-        return
+        return week_response
