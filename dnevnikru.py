@@ -21,6 +21,7 @@ class Defaults(enum.Enum):
     marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
     searchpeople_link = base_link + "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"
     birthdays_link = base_link + "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"
+    week_link = "https://dnevnik.ru/currentprogress/choose?userComeFromSelector=True"
 
 
 class DnevnikError(Exception):
@@ -173,3 +174,11 @@ class Dnevnik:
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
+
+    def week(self):
+
+        link = Defaults.week_link.value
+        data_response = self.main_session.get(link).text
+
+        soup = BeautifulSoup(data_response, 'lxml')
+        user_id = soup.find('option')["value"]
