@@ -94,12 +94,12 @@ class Dnevnik:
         if last_page is not None:
             subjects = []
             for page in range(1, int(last_page) + 1):
-                homework_response = self.main_session.get(link+f"&page={page}", headers={"Referer": link}).text
+                homework_response = self.main_session.get(link + f"&page={page}", headers={"Referer": link}).text
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2],
                                i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
                                i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
             return subjects
         if last_page is None:
@@ -109,7 +109,7 @@ class Dnevnik:
                     subject = [i[2],
                                i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
                                i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
                 return subjects
             except Exception:
@@ -127,7 +127,8 @@ class Dnevnik:
             raise DnevnikError("Какой-то из параметров введен неверно", "Parameters Error")
 
     def searchpeople(self, group="", name="", grade=""):
-        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""], "Неверная группа!"
+        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
+                         ""], "Неверная группа!"
 
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
@@ -152,7 +153,8 @@ class Dnevnik:
                 return ["По этому запросу ничего не найдено"]
 
     def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
-        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""], "Неверная группа!"
+        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
+                         ""], "Неверная группа!"
         assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
 
         link = Defaults.birthdays_link.value.format(self.school, day, month, group)
@@ -162,7 +164,7 @@ class Dnevnik:
         if last_page is not None:
             birthdays = []
             for page in range(1, int(last_page) + 1):
-                birthdays_response = self.main_session.get(link+f"&page={page}").text
+                birthdays_response = self.main_session.get(link + f"&page={page}").text
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
             return birthdays
@@ -179,6 +181,18 @@ class Dnevnik:
 
         link = Defaults.week_link.value
         data_response = self.main_session.get(link).text
+        today = Defaults.dateFrom.value
+        weeks = []
+        week = date(2021, 7, 19)
+        for i in range(0, 35):
+            week = week + timedelta(7)
+            weeks.append(week.strftime("%d.%m.%Y"))
+
 
         soup = BeautifulSoup(data_response, 'lxml')
         user_id = soup.find('option')["value"]
+
+        link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
+            user_id, self.school, Defaults.studyYear.value, 0
+        )
+        return weeks
