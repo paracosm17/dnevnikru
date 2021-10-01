@@ -177,22 +177,29 @@ class Dnevnik:
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
 
-    def week(self):
-
+    def week(self, weeks=0):
+        """
+        На данный момент метод не готов до конца!
+        :param weeks:
+        :return:
+        """
         link = Defaults.week_link.value
         data_response = self.main_session.get(link).text
-        today = Defaults.dateFrom.value
-        weeks = []
+        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7*weeks)
+        weeks_list = []
         week = date(2021, 7, 19)
         for i in range(0, 35):
             week = week + timedelta(7)
-            weeks.append(week.strftime("%d.%m.%Y"))
-
-
+            weeks_list.append(week.strftime("%d.%m.%Y"))
+        for i in weeks_list:
+            if day <= datetime.strptime(i, "%d.%m.%Y"):
+                week = weeks_list[weeks_list.index(i)-1]
+                break
         soup = BeautifulSoup(data_response, 'lxml')
         user_id = soup.find('option')["value"]
-
         link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
-            user_id, self.school, Defaults.studyYear.value, 0
-        )
-        return weeks
+            user_id, self.school, Defaults.studyYear.value, week)
+        week_response = self.main_session.get(link).text
+        with open("week.html", "w", encoding="utf-8") as f:
+            f.write(week_response)
+        return
