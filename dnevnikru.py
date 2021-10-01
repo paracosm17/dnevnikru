@@ -3,6 +3,7 @@ import fake_useragent
 import requests
 from datetime import *
 from bs4 import BeautifulSoup
+import urllib.parse
 
 
 class Defaults(enum.Enum):
@@ -14,7 +15,7 @@ class Defaults(enum.Enum):
     studyYear = date.today().strftime("%Y")
     day = date.today().day
     month = date.today().month
-    choose = '%D0%9F%D0%BE%D0%BA%D0%B0%D0%B7%D0%B0%D1%82%D1%8C'
+    choose = urllib.parse.quote("Показать")
     base_link = "https://schools.dnevnik.ru/"
     hw_link = base_link + "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=" + choose
     marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
