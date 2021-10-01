@@ -80,8 +80,10 @@ class Dnevnik:
         if datefrom != Defaults.dateFrom.value or days != 10:
             dt = datetime.strptime(datefrom, '%d.%m.%Y')
             dateto = (dt + timedelta(days=days)).strftime("%d.%m.%Y")
-        assert len(datefrom) == 10 or len(dateto) == 10, "Неверно указаны dateto или datefrom"
-        assert str(studyyear) in datefrom, "StudyYear должен соответствовать datefrom"
+        if len(datefrom) != 10 or len(dateto) != 10:
+            raise DnevnikError("Неверно указаны dateto или datefrom", "Parameters error")
+        if str(studyyear) not in datefrom:
+            raise DnevnikError("StudyYear должен соответствовать datefrom", "Parameters error")
 
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
