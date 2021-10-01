@@ -80,10 +80,8 @@ class Dnevnik:
         if datefrom != Defaults.dateFrom.value or days != 10:
             dt = datetime.strptime(datefrom, '%d.%m.%Y')
             dateto = (dt + timedelta(days=days)).strftime("%d.%m.%Y")
-        if len(datefrom) != 10 or len(dateto) != 10:
-            raise DnevnikError("Неверно указаны dateto или datefrom", "Parameters error")
-        if str(studyyear) not in datefrom:
-            raise DnevnikError("StudyYear должен соответствовать datefrom", "Parameters error")
+        assert len(datefrom) == 10 or len(dateto) == 10, "Неверно указаны dateto или datefrom"
+        assert str(studyyear) in datefrom, "StudyYear должен соответствовать datefrom"
 
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
@@ -126,8 +124,7 @@ class Dnevnik:
             raise DnevnikError("Какой-то из параметров введен неверно", "Parameters Error")
 
     def searchpeople(self, group="", name="", grade=""):
-        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
-            raise DnevnikError("Неверная группа!", "Group error")
+        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""], "Неверная группа!"
 
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
@@ -152,10 +149,8 @@ class Dnevnik:
                 return ["По этому запросу ничего не найдено"]
 
     def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
-        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
-            raise DnevnikError("Incorrect group", "Group error")
-        if day not in list(range(1, 32)) or month not in list(range(1, 13)):
-            raise DnevnikError("Incorrect day or month", "Date error")
+        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""], "Неверная группа!"
+        assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
 
         link = Defaults.birthdays_link.value.format(self.school, day, month, group)
         birthdays_response = self.main_session.get(link).text
