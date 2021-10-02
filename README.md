@@ -1,4 +1,5 @@
 # dnevnikru
+
 > Модуль для работы с сайтом dnevnik.ru на python
 
 Объект dnevnik принимает в себя login и password от аккаунта в дневнике <br/>
@@ -9,20 +10,21 @@
 Windows:
 
 Поместите файл ```dnevnikru.py``` в папку с вашим проектом
-```
+
+```python
 import dnevnikru
 ```
 
 ## Примеры использования
 
-```
+```python
 from dnevnikru import Dnevnik
 
 dn = Dnevnik(login='Your login', password='Your password')
 
-homework = dn.homework(studyYear=2020, datefrom='01.12.2020', dateto='30.12.2020')
+homework = dn.homework(studyyear=2020, datefrom='01.12.2020', dateto='30.12.2020')
 marks = dn.marks(index=0, period=1)
-11_b = dn.searchpeople(grade='11Б')
+class_11b = dn.searchpeople(grade='11Б')
 birthdays = dn.birthdays(day=9, month=5)
 ```
 
@@ -30,28 +32,42 @@ _Ещё больше примеров использования на стран
 
 ## Зависимости
 
-Для работы модуля понадобятся библеотеки
-requests,
-fake-useragent,
-lxml,
-bs4
+Для работы модуля понадобятся библиотеки `requests`, `fake-useragent`, `lxml`, `bs4`
 
-```
+```cmd
 pip install -r requirements.txt
+```
+
+Или используя менеджер [Pipenv](https://github.com/pypa/pipenv)
+
+Если не установлен pipenv, выполнить
+
+```cmd
+python -m pip install pipenv
+```
+
+Создать виртуальное окружение в директории с проектом
+
+```cmd
+pipenv shell
+```
+
+Установить все требуемые библиотеки из Pipfile
+
+```cmd
+pipenv install --ignore-pipfile
 ```
 
 ## Релизы
 
 * 0.0.1
-    * Первая версия проекта
-
+  * Первая версия проекта
 
 ## Связь
 
 Alexandr – [@paracosm17](https://t.me/paracosm17) – paracosm17@yandex.ru
 
 Distributed under the Apache License 2.0 license. See ``LICENSE`` for more information.
-
 
 <!-- Markdown link & img dfn's -->
 [npm-image]: https://img.shields.io/npm/v/datadog-metrics.svg?style=flat-square
