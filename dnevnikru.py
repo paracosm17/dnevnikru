@@ -17,7 +17,8 @@ class Defaults(enum.Enum):
     month = date.today().month
     choose = urllib.parse.quote("Показать")
     base_link = "https://schools.dnevnik.ru/"
-    hw_link = "".join((base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
+    hw_link = "".join(
+        (base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
     marks_link = "".join((base_link, "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"))
     searchpeople_link = "".join((base_link, "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"))
     birthdays_link = "".join((base_link, "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"))
@@ -63,7 +64,7 @@ class Utils:
     def get_week_response(session, school, weeks):
         link = Defaults.week_link.value
         data_response = session.get(link).text
-        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7*weeks)
+        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7 * weeks)
         weeks_list = []
         week = date(2021, 7, 19)
         for i in range(0, 35):
@@ -71,7 +72,7 @@ class Utils:
             weeks_list.append(week.strftime("%d.%m.%Y"))
         for i in weeks_list:
             if day <= datetime.strptime(i, "%d.%m.%Y"):
-                week = weeks_list[weeks_list.index(i)-1]
+                week = weeks_list[weeks_list.index(i) - 1]
                 break
         soup = BeautifulSoup(data_response, 'lxml')
         user_id = soup.find('option')["value"]
@@ -130,7 +131,7 @@ class Dnevnik:
                     subject = [i[2],
                                i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
                                i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
             return subjects
         if last_page is None:
@@ -140,7 +141,7 @@ class Dnevnik:
                     subject = [i[2],
                                i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
                                i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
                 return subjects
             except Exception:
