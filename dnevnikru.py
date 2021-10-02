@@ -59,6 +59,27 @@ class Utils:
         content = [a for a in content if a != []]
         return content
 
+    @staticmethod
+    def get_week_response(session, school, weeks):
+        link = Defaults.week_link.value
+        data_response = session.get(link).text
+        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7*weeks)
+        weeks_list = []
+        week = date(2021, 7, 19)
+        for i in range(0, 35):
+            week = week + timedelta(7)
+            weeks_list.append(week.strftime("%d.%m.%Y"))
+        for i in weeks_list:
+            if day <= datetime.strptime(i, "%d.%m.%Y"):
+                week = weeks_list[weeks_list.index(i)-1]
+                break
+        soup = BeautifulSoup(data_response, 'lxml')
+        user_id = soup.find('option')["value"]
+        link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
+            user_id, school, Defaults.studyYear.value, week)
+        week_response = session.get(link).text
+        return week_response
+
 
 class Dnevnik:
     def __init__(self, login, password):
@@ -79,6 +100,16 @@ class Dnevnik:
 
     def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
                  studyyear=Defaults.studyYear.value, days=10):
+        """
+        Возвращает список домашней работы
+        Можно передать дату начала, дату конца
+        Также можно передать на сколько дней вперед показать д/з
+        :param datefrom:
+        :param dateto:
+        :param studyyear:
+        :param days:
+        :return:
+        """
         if datefrom != Defaults.dateFrom.value or days != 10:
             dt = datetime.strptime(datefrom, '%d.%m.%Y')
             dateto = (dt + timedelta(days=days)).strftime("%d.%m.%Y")
@@ -116,6 +147,14 @@ class Dnevnik:
                 return ["Домашних заданий не найдено!"]
 
     def marks(self, index="", period=""):
+        """
+        Возвращает список оценок (По умолчанию текущий период)
+        Можно передать индекс (отвечает за учебный год)
+        И период (Отвечает за семестр/четверть)
+        :param index:
+        :param period:
+        :return:
+        """
         link = Defaults.marks_link.value.format(self.school, index, period)
         marks_response = self.main_session.get(link, headers={"Referer": link}).text
         try:
@@ -127,6 +166,14 @@ class Dnevnik:
             raise DnevnikError("Какой-то из параметров введен неверно", "Parameters Error")
 
     def searchpeople(self, group="", name="", grade=""):
+        """
+        Возвращает список людей и их группы
+        Можно передать имя (ФИО, ФИ), группу, класс
+        :param group:
+        :param name:
+        :param grade:
+        :return:
+        """
         assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
                          ""], "Неверная группа!"
 
@@ -153,6 +200,15 @@ class Dnevnik:
                 return ["По этому запросу ничего не найдено"]
 
     def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
+        """
+        Возвращает список людей у кого в этот день день рождения
+        По умолчанию текущая дата
+        Можно передать день (int), месяц (int), группу
+        :param day:
+        :param month:
+        :param group:
+        :return:
+        """
         assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
                          ""], "Неверная группа!"
         assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
@@ -177,27 +233,19 @@ class Dnevnik:
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
 
-    def week(self, weeks=0):
+    def week_schedule(self, weeks=0):
         """
-        На данный момент метод не готов до конца!
+        weeks - По умолчанию текущая неделя
+        Если передать weeks, то можно увидеть следующие/предыдущие недели
+        Для предыдущих используется отрицательное число
         :param weeks:
         :return:
         """
-        link = Defaults.week_link.value
-        data_response = self.main_session.get(link).text
-        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7*weeks)
-        weeks_list = []
-        week = date(2021, 7, 19)
-        for i in range(0, 35):
-            week = week + timedelta(7)
-            weeks_list.append(week.strftime("%d.%m.%Y"))
-        for i in weeks_list:
-            if day <= datetime.strptime(i, "%d.%m.%Y"):
-                week = weeks_list[weeks_list.index(i)-1]
-                break
-        soup = BeautifulSoup(data_response, 'lxml')
-        user_id = soup.find('option')["value"]
-        link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
-            user_id, self.school, Defaults.studyYear.value, week)
-        week_response = self.main_session.get(link).text
-        return week_response
+        week_response = Utils.get_week_response(session=self.main_session,
+                                                school=self.school, weeks=weeks)
+        soup = BeautifulSoup(week_response, 'lxml')
+        title = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text
+        all_li = soup.findAll("li", {"class": "current-progress-schedule__item"})
+        schedule = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
+        return [title] + schedule
+
