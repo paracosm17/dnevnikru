@@ -1,7 +1,7 @@
 import enum
 import fake_useragent
 import requests
-from datetime import *
+from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
 
 
@@ -16,10 +16,10 @@ class Defaults(enum.Enum):
     month = date.today().month
     choose = '%D0%9F%D0%BE%D0%BA%D0%B0%D0%B7%D0%B0%D1%82%D1%8C'
     base_link = "https://schools.dnevnik.ru/"
-    hw_link = base_link + "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=" + choose
-    marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
-    searchpeople_link = base_link + "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"
-    birthdays_link = base_link + "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"
+    hw_link = "".join((base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
+    marks_link = "".join((base_link, "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"))
+    searchpeople_link = "".join((base_link, "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"))
+    birthdays_link = "".join((base_link, "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"))
 
 
 class DnevnikError(Exception):
@@ -55,7 +55,7 @@ class Utils:
                 the_text = ''.join(the_strings)
                 content[-1].append(the_text)
         content = [a for a in content if a != []]
-        return content
+        return tuple(content)
 
 
 class Dnevnik:
@@ -68,7 +68,7 @@ class Dnevnik:
         self.login, self.password = login, password
         self.main_session = requests.Session()
         self.main_session.cookies.update({"User-Agent": fake_useragent.UserAgent().random})
-        self.main_session.post(f'https://login.dnevnik.ru/login', {"login": self.login, "password": self.password})
+        self.main_session.post('https://login.dnevnik.ru/login', data={"login": self.login, "password": self.password})
         try:
             school = self.main_session.cookies['t0']
             self.school = school
