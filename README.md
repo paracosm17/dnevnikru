@@ -66,7 +66,7 @@ pipenv install --ignore-pipfile
 ## Связь
 
 Alexandr – [@paracosm17](https://t.me/paracosm17) – paracosm17@yandex.ru <br>
-Stepan - [@stepan_skryabin](https://t.me/@stepan_skryabin)
+Stepan - [@stepan_skryabin](https://t.me/@stepan_skryabin) - stepan.skrjabin@gmail.com
 
 Distributed under the Apache License 2.0 license. See ``LICENSE`` for more information.
 
