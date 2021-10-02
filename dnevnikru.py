@@ -3,6 +3,7 @@ import fake_useragent
 import requests
 from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
+import urllib.parse
 
 
 class Defaults(enum.Enum):
@@ -14,12 +15,13 @@ class Defaults(enum.Enum):
     studyYear = date.today().strftime("%Y")
     day = date.today().day
     month = date.today().month
-    choose = '%D0%9F%D0%BE%D0%BA%D0%B0%D0%B7%D0%B0%D1%82%D1%8C'
+    choose = urllib.parse.quote("Показать")
     base_link = "https://schools.dnevnik.ru/"
-    hw_link = "".join((base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
-    marks_link = "".join((base_link, "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"))
-    searchpeople_link = "".join((base_link, "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"))
-    birthdays_link = "".join((base_link, "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"))
+    hw_link = base_link + "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=" + choose
+    marks_link = base_link + "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"
+    searchpeople_link = base_link + "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"
+    birthdays_link = base_link + "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"
+    week_link = "https://dnevnik.ru/currentprogress/choose?userComeFromSelector=True"
 
 
 class DnevnikError(Exception):
@@ -57,6 +59,27 @@ class Utils:
         content = [a for a in content if a != []]
         return tuple(content)
 
+    @staticmethod
+    def get_week_response(session, school, weeks):
+        link = Defaults.week_link.value
+        data_response = session.get(link).text
+        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7*weeks)
+        weeks_list = []
+        week = date(2021, 7, 19)
+        for i in range(0, 35):
+            week = week + timedelta(7)
+            weeks_list.append(week.strftime("%d.%m.%Y"))
+        for i in weeks_list:
+            if day <= datetime.strptime(i, "%d.%m.%Y"):
+                week = weeks_list[weeks_list.index(i)-1]
+                break
+        soup = BeautifulSoup(data_response, 'lxml')
+        user_id = soup.find('option')["value"]
+        link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
+            user_id, school, Defaults.studyYear.value, week)
+        week_response = session.get(link).text
+        return week_response
+
 
 class Dnevnik:
     def __init__(self, login, password):
@@ -77,6 +100,16 @@ class Dnevnik:
 
     def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
                  studyyear=Defaults.studyYear.value, days=10):
+        """
+        Возвращает список домашней работы
+        Можно передать дату начала, дату конца
+        Также можно передать на сколько дней вперед показать д/з
+        :param datefrom:
+        :param dateto:
+        :param studyyear:
+        :param days:
+        :return:
+        """
         if datefrom != Defaults.dateFrom.value or days != 10:
             dt = datetime.strptime(datefrom, '%d.%m.%Y')
             dateto = (dt + timedelta(days=days)).strftime("%d.%m.%Y")
@@ -92,13 +125,12 @@ class Dnevnik:
         if last_page is not None:
             subjects = []
             for page in range(1, int(last_page) + 1):
-                homework_response = self.main_session.get(link+f"&page={page}", headers={"Referer": link}).text
+                homework_response = self.main_session.get(link + f"&page={page}", headers={"Referer": link}).text
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2],
-                               i[0].replace('\n\r\n                        ', '').replace(
-                                   '\r\n                    \n', ''),
-                               i[3].replace('\n\n', '').replace('\xa0', ' ').replace('\r\n        \t\t\t ', '').replace(
-                                   '\r\n                \r\n\t\t\t\t    \n', '')]
+                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
+                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
+                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
             return subjects
         if last_page is None:
@@ -106,16 +138,23 @@ class Dnevnik:
                 subjects = []
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2],
-                               i[0].replace('\n\r\n                        ', '').replace(
-                                   '\r\n                    \n', ''),
-                               i[3].replace('\n\n', '').replace('\xa0', ' ').replace('\r\n        \t\t\t ', '').replace(
-                                   '\r\n                \r\n\t\t\t\t    \n', '')]
+                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
+                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
+                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
                 return subjects
             except Exception:
                 return ["Домашних заданий не найдено!"]
 
     def marks(self, index="", period=""):
+        """
+        Возвращает список оценок (По умолчанию текущий период)
+        Можно передать индекс (отвечает за учебный год)
+        И период (Отвечает за семестр/четверть)
+        :param index:
+        :param period:
+        :return:
+        """
         link = Defaults.marks_link.value.format(self.school, index, period)
         marks_response = self.main_session.get(link, headers={"Referer": link}).text
         try:
@@ -127,8 +166,16 @@ class Dnevnik:
             raise DnevnikError("Какой-то из параметров введен неверно", "Parameters Error")
 
     def searchpeople(self, group="", name="", grade=""):
-        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
-            raise DnevnikError("Неверная группа!", "Group error")
+        """
+        Возвращает список людей и их группы
+        Можно передать имя (ФИО, ФИ), группу, класс
+        :param group:
+        :param name:
+        :param grade:
+        :return:
+        """
+        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
+                         ""], "Неверная группа!"
 
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
@@ -153,10 +200,18 @@ class Dnevnik:
                 return ["По этому запросу ничего не найдено"]
 
     def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
-        if group not in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators', ""]:
-            raise DnevnikError("Incorrect group", "Group error")
-        if day not in list(range(1, 32)) or month not in list(range(1, 13)):
-            raise DnevnikError("Incorrect day or month", "Date error")
+        """
+        Возвращает список людей у кого в этот день день рождения
+        По умолчанию текущая дата
+        Можно передать день (int), месяц (int), группу
+        :param day:
+        :param month:
+        :param group:
+        :return:
+        """
+        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
+                         ""], "Неверная группа!"
+        assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
 
         link = Defaults.birthdays_link.value.format(self.school, day, month, group)
         birthdays_response = self.main_session.get(link).text
@@ -165,7 +220,7 @@ class Dnevnik:
         if last_page is not None:
             birthdays = []
             for page in range(1, int(last_page) + 1):
-                birthdays_response = self.main_session.get(link+f"&page={page}").text
+                birthdays_response = self.main_session.get(link + f"&page={page}").text
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
             return birthdays
@@ -177,3 +232,20 @@ class Dnevnik:
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
+
+    def week_schedule(self, weeks=0):
+        """
+        weeks - По умолчанию текущая неделя
+        Если передать weeks, то можно увидеть следующие/предыдущие недели
+        Для предыдущих используется отрицательное число
+        :param weeks:
+        :return:
+        """
+        week_response = Utils.get_week_response(session=self.main_session,
+                                                school=self.school, weeks=weeks)
+        soup = BeautifulSoup(week_response, 'lxml')
+        title = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text
+        all_li = soup.findAll("li", {"class": "current-progress-schedule__item"})
+        schedule = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
+        return [title] + schedule
+
