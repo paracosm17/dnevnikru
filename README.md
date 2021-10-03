@@ -26,7 +26,7 @@ homework = dn.homework(studyyear=2020, datefrom='01.12.2020', dateto='30.12.2020
 marks = dn.marks(index=0, period=1)
 class_11b = dn.searchpeople(grade='11Б')
 birthdays = dn.birthdays(day=9, month=5)
-shedule_next_week = dn.week_schedule(weeks=1)
+schedule = dn.week(info="schedule", weeks=-1)
 ```
 
 _Ещё больше примеров использования на странице [Wiki][wiki]._
