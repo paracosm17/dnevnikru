@@ -70,7 +70,7 @@ Alexandr – [@paracosm17](https://t.me/paracosm17) – paracosm17@yandex.ru <br
 <br>
 Contributors: <br>
 <br>
-<a href="https://github.com/stepanskryabin"><img src="https://avatars.githubusercontent.com/u/47498917?v=4" /></a>
+<a href="https://github.com/stepanskryabin"><img src="https://avatars.githubusercontent.com/u/47498917?v=4&size=40" /></a>
 
 Distributed under the Apache License 2.0 license. See ``LICENSE`` for more information.
 
