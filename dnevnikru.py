@@ -245,7 +245,8 @@ class Dnevnik:
         :return:
         """
 
-        assert info in ["themes", "attendance", "marks", "schedule", "homeworks"], "error"
+        assert info in ["themes", "attendance", "marks", "schedule", "homeworks"], \
+            'info must be "themes" or "attendance" or "marks" or "schedule" or "homeworks"'
         head = "current-progress-{}".format(info)
         item = "current-progress-{}__item"
         item = item.format("list") if info != "schedule" else item.format("schedule")
