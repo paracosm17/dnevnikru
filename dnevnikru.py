@@ -234,19 +234,27 @@ class Dnevnik:
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
 
-    def week_schedule(self, weeks=0):
+    def week(self, info, weeks=0):
         """
+        info - "themes", "attendance", "marks", "schedule", "homeworks"
         weeks - По умолчанию текущая неделя
         Если передать weeks, то можно увидеть следующие/предыдущие недели
         Для предыдущих используется отрицательное число
+        :param info:
         :param weeks:
         :return:
         """
+
+        assert info in ["themes", "attendance", "marks", "schedule", "homeworks"], "error"
+        head = "current-progress-{}".format(info)
+        item = "current-progress-{}__item"
+        item = item.format("list") if info != "schedule" else item.format("schedule")
         week_response = Utils.get_week_response(session=self.main_session,
                                                 school=self.school, weeks=weeks)
         soup = BeautifulSoup(week_response, 'lxml')
         title = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text
-        all_li = soup.findAll("li", {"class": "current-progress-schedule__item"})
-        schedule = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
-        return [title] + schedule
+        h = soup.find_all("div", {"class": head})[0]
+        all_li = h.findAll("li", {"class": item})
+        week = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
+        return [title] + week
 
