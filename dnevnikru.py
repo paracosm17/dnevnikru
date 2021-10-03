@@ -249,3 +249,4 @@ class Dnevnik:
         all_li = soup.findAll("li", {"class": "current-progress-schedule__item"})
         schedule = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
         return [title] + schedule
+
