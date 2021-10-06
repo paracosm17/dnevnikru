@@ -41,8 +41,7 @@ class Utils:
             last_page = pages[-1].text
             return last_page
         except Exception:
-            last_page = None
-            return last_page
+            return None
 
     @staticmethod
     def save_content(response, class2):
@@ -67,7 +66,7 @@ class Utils:
         day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7 * weeks)
         weeks_list = []
         week = date(2021, 7, 19)
-        for i in range(0, 35):
+        for _ in range(35):
             week = week + timedelta(7)
             weeks_list.append(week.strftime("%d.%m.%Y"))
         for i in weeks_list:
