@@ -17,8 +17,7 @@ class Defaults(enum.Enum):
     month = date.today().month
     choose = urllib.parse.quote("Показать")
     base_link = "https://schools.dnevnik.ru/"
-    hw_link = "".join(
-        (base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
+    hw_link = "".join((base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
     marks_link = "".join((base_link, "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"))
     searchpeople_link = "".join((base_link, "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"))
     birthdays_link = "".join((base_link, "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"))
@@ -99,6 +98,12 @@ class Dnevnik:
         except Exception:
             raise DnevnikError('Неверный логин или пароль!', 'LoginError')
 
+    @staticmethod
+    def save_content2(self, link, page, headers) -> BeautifulSoup:
+        response = self.main_session.get(link + f"&page={page}", headers={"Referer": headers}).text
+        soup = BeautifulSoup(response, 'lxml')
+        return soup
+
     def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
                  studyyear=Defaults.studyYear.value, days=10):
         """
@@ -120,32 +125,32 @@ class Dnevnik:
             raise DnevnikError("StudyYear должен соответствовать datefrom", "Parameters error")
 
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
-        homework_response = self.main_session.get(link, headers={"Referer": link}).text
-        last_page = Utils.last_page(homework_response)
+        #homework_response = self.main_session.get(link, headers={"Referer": link}).text
+        #last_page = Utils.last_page(homework_response)
 
-        if last_page is not None:
-            subjects = []
-            for page in range(1, int(last_page) + 1):
-                homework_response = self.main_session.get(link + f"&page={page}", headers={"Referer": link}).text
-                for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
-                    subject = [i[2],
-                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
-                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
-                    subjects.append(subject)
-            return subjects
-        if last_page is None:
-            try:
-                subjects = []
-                for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
-                    subject = [i[2],
-                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
-                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
-                    subjects.append(subject)
-                return subjects
-            except Exception:
-                return ["Домашних заданий не найдено!"]
+        subjects = []
+        result = []
+        first_page = self.save_content2(self, link, page=1, headers=link)
+        check_empty_page = first_page.find('div', class_='emptyData')
+        if check_empty_page is None:
+            number_page = first_page.find('div', class_="pager").findAll('li')
+            for number in range(1, int(number_page[-1].text) + 1):
+                page = self.save_content2(self, link, page=number, headers=link)
+                table = page.find('table', class_='grid gridLines vam hmw')
+                all_tr = table.findAll('tr')
+                for row in all_tr:
+                    all_td = row.findAll('td')
+                    for td in all_td:
+                        if td.a is None:
+                            text = td.get_text("\r\n", strip=True)
+                        else:
+                            text = td.a.get_text("\r\n", strip=True)
+                        text = text.replace("\r\n", " ").replace("\xa0", " ")
+                        result.append(text)
+                    subjects.append(tuple(result))
+            return tuple(subjects)
+        else:
+            return None
 
     def marks(self, index="", period=""):
         """
