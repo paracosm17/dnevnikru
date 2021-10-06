@@ -1,9 +1,9 @@
 import enum
 import fake_useragent
 import requests
-from datetime import date, timedelta, datetime
-from bs4 import BeautifulSoup
 import urllib.parse
+from bs4 import BeautifulSoup
+from datetime import date, timedelta, datetime
 
 
 class Defaults(enum.Enum):
@@ -38,11 +38,9 @@ class Utils:
             soup = BeautifulSoup(response, 'lxml')
             all_pages = soup.find('div', {'class': 'pager'})
             pages = all_pages.find_all('li')
-            last_page = pages[-1].text
-            return last_page
+            return pages[-1].text
         except Exception:
-            last_page = None
-            return last_page
+            return None
 
     @staticmethod
     def save_content(response, class2):
@@ -67,7 +65,7 @@ class Utils:
         day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7 * weeks)
         weeks_list = []
         week = date(2021, 7, 19)
-        for i in range(0, 35):
+        for _ in range(35):
             week = week + timedelta(7)
             weeks_list.append(week.strftime("%d.%m.%Y"))
         for i in weeks_list:
@@ -78,8 +76,7 @@ class Utils:
         user_id = soup.find('option')["value"]
         link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
             user_id, school, Defaults.studyYear.value, week)
-        week_response = session.get(link).text
-        return week_response
+        return session.get(link).text
 
 
 class Dnevnik:
@@ -131,7 +128,7 @@ class Dnevnik:
                     subject = [i[2],
                                i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
                                i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
             return subjects
         if last_page is None:
@@ -141,7 +138,7 @@ class Dnevnik:
                     subject = [i[2],
                                i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
                                i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                                   replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
                     subjects.append(subject)
                 return subjects
             except Exception:
@@ -226,13 +223,16 @@ class Dnevnik:
                     birthdays.append(i[1].split('\n')[1])
             return birthdays
         if last_page is None:
-            birthdays = []
             if "в школе именинников нет" in birthdays_response:
                 return [f"К сожалению, {day}.{month} среди этой группы в школе именинников нет."]
-            else:
-                for i in Utils.save_content(birthdays_response, class2='people grid'):
-                    birthdays.append(i[1].split('\n')[1])
-                return birthdays
+            birthdays = [
+                i[1].split('\n')[1]
+                for i in Utils.save_content(
+                    birthdays_response, class2='people grid'
+                )
+            ]
+
+            return birthdays
 
     def week(self, info, weeks=0):
         """
@@ -258,4 +258,3 @@ class Dnevnik:
         all_li = h.findAll("li", {"class": item})
         week = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
         return [title] + week
-
