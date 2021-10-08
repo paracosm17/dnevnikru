@@ -1,5 +1,4 @@
 import enum
-import fake_useragent
 import requests
 from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
@@ -40,8 +39,7 @@ class Utils:
             last_page = pages[-1].text
             return last_page
         except Exception:
-            last_page = None
-            return last_page
+            return None
 
     @staticmethod
     def save_content(response, class2):
@@ -66,7 +64,7 @@ class Utils:
         day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7 * weeks)
         weeks_list = []
         week = date(2021, 7, 19)
-        for i in range(0, 35):
+        for _ in range(35):
             week = week + timedelta(7)
             weeks_list.append(week.strftime("%d.%m.%Y"))
         for i in weeks_list:
@@ -90,7 +88,8 @@ class Dnevnik:
         """
         self.login, self.password = login, password
         self.main_session = requests.Session()
-        self.main_session.cookies.update({"User-Agent": fake_useragent.UserAgent().random})
+        self.main_session.headers.update({"User-Agent": "Mozilla/5.0 (Wayland; Linux x86_64) AppleWebKit/537.36 ("
+                                                        "KHTML, like Gecko) Chrome/94.0.4606.72 Safari/537.36"})
         self.main_session.post('https://login.dnevnik.ru/login', data={"login": self.login, "password": self.password})
         try:
             school = self.main_session.cookies['t0']
