@@ -88,6 +88,8 @@ class Dnevnik:
         """
         self.login, self.password = login, password
         self.main_session = requests.Session()
+        self.main_session.headers.update({"User-Agent": "Mozilla/5.0 (Wayland; Linux x86_64) AppleWebKit/537.36 ("
+                                                        "KHTML, like Gecko) Chrome/94.0.4606.72 Safari/537.36"})
         self.main_session.post('https://login.dnevnik.ru/login', data={"login": self.login, "password": self.password})
         try:
             school = self.main_session.cookies['t0']
