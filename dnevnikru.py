@@ -1,5 +1,4 @@
 import enum
-import fake_useragent
 import requests
 from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
@@ -89,7 +88,6 @@ class Dnevnik:
         """
         self.login, self.password = login, password
         self.main_session = requests.Session()
-        self.main_session.cookies.update({"User-Agent": fake_useragent.UserAgent().random})
         self.main_session.post('https://login.dnevnik.ru/login', data={"login": self.login, "password": self.password})
         try:
             school = self.main_session.cookies['t0']
