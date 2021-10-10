@@ -12,7 +12,7 @@ Windows:
 Поместите файл ```dnevnikru.py``` в папку с вашим проектом
 
 ```python
-import dnevnikru
+from dnevnikru import Dnevnik
 ```
 
 ## Примеры использования
