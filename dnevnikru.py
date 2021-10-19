@@ -119,6 +119,8 @@ class Dnevnik:
 
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
+        if "Домашних заданий не найдено." in homework_response:
+            return ["Домашних заданий не найдено!"]
         last_page = Utils.last_page(homework_response)
 
         if last_page is not None:
@@ -138,8 +140,8 @@ class Dnevnik:
                                " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(subject)
                 return subjects
-            except Exception:
-                return ["Домашних заданий не найдено!"]
+            except Exception as e:
+                raise DnevnikError(e, "DnevnikError")
 
     def marks(self, index="", period=""):
         """
@@ -157,8 +159,8 @@ class Dnevnik:
             for mark in marks:
                 mark[2] = mark[2].replace(" ", "")
             return marks
-        except DnevnikError:
-            raise DnevnikError("Какой-то из параметров введен неверно", "Parameters Error")
+        except Exception as e:
+            raise DnevnikError(e, "DnevnikError")
 
     def searchpeople(self, group="", name="", grade=""):
         """
@@ -174,6 +176,8 @@ class Dnevnik:
 
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
+        if "Никого не найдено. Измените условия поиска." in searchpeople_response:
+            return ["Никого не найдено. Измените условия поиска."]
         last_page = Utils.last_page(searchpeople_response)
 
         if last_page is not None:
@@ -191,25 +195,27 @@ class Dnevnik:
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
                     members.append(member)
                 return members
-            except Exception:
-                return ["По этому запросу ничего не найдено"]
+            except Exception as e:
+                raise DnevnikError(e, "DnevnikError")
 
     def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
         """
         Возвращает список людей у кого в этот день день рождения
         По умолчанию текущая дата
         Можно передать день (int), месяц (int), группу
+        Группа class - одноклассники текущего пользователя
         :param day:
         :param month:
         :param group:
         :return:
         """
-        assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
-                         ""], "Неверная группа!"
+        assert group in ['all', 'students', 'staff', 'class', ''], "Неверная группа!"
         assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
 
         link = Defaults.birthdays_link.value.format(self.school, day, month, group)
         birthdays_response = self.main_session.get(link).text
+        if "в школе именинников нет." in birthdays_response:
+            return ["В этот день среди этой группы в школе именинников нет."]
         last_page = Utils.last_page(birthdays_response)
 
         if last_page is not None:
@@ -221,12 +227,12 @@ class Dnevnik:
             return birthdays
         if last_page is None:
             birthdays = []
-            if "в школе именинников нет" in birthdays_response:
-                return [f"К сожалению, {day}.{month} среди этой группы в школе именинников нет."]
-            else:
+            try:
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
                 return birthdays
+            except Exception as e:
+                raise DnevnikError(e, "DnevnikError")
 
     def week(self, info, weeks=0):
         """
