@@ -126,20 +126,16 @@ class Dnevnik:
             for page in range(1, int(last_page) + 1):
                 homework_response = self.main_session.get(link + f"&page={page}", headers={"Referer": link}).text
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
-                    subject = [i[2],
-                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
-                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                    subject = [i[2], i[0].strip(),
+                               " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(subject)
             return subjects
         if last_page is None:
             try:
                 subjects = []
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
-                    subject = [i[2],
-                               i[0].replace("\n\r\n" + " " * 24, "").replace("\r\n" + " " * 20 + "\n", ""),
-                               i[3].replace("\n" * 2, "").replace("\xa0", " ").replace("\r\n" + " " * 8 + "\t" * 3, "").
-                               replace("\r\n" + " " * 16 + "\r\n" + "\t" * 4 + " " * 4 + "\n", '')]
+                    subject = [i[2], i[0].strip(),
+                               " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(subject)
                 return subjects
             except Exception:

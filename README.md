@@ -33,30 +33,10 @@ _Ещё больше примеров использования на стран
 
 ## Зависимости
 
-Для работы модуля понадобятся библиотеки `requests`, `fake-useragent`, `lxml`, `bs4`
+Для работы модуля понадобятся библиотеки `requests`, `lxml`, `bs4`
 
 ```cmd
 pip install -r requirements.txt
-```
-
-Или используя менеджер [Pipenv](https://github.com/pypa/pipenv)
-
-Если не установлен pipenv, выполнить
-
-```cmd
-python -m pip install pipenv
-```
-
-Создать виртуальное окружение в директории с проектом
-
-```cmd
-pipenv shell
-```
-
-Установить все требуемые библиотеки из Pipfile
-
-```cmd
-pipenv install --ignore-pipfile
 ```
 
 ## Релизы
