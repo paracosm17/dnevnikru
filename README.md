@@ -2,7 +2,7 @@
 
 > Модуль для работы с сайтом dnevnik.ru на python
 
-Объект dnevnik принимает в себя login и password от аккаунта в дневнике <br/>
+Объект Dnevnik принимает в себя login и password от аккаунта в дневнике <br/>
 Методы: homework, marks, searchpeople, birthdays, week
 
 ## Установка
@@ -29,7 +29,7 @@ birthdays = dn.birthdays(day=9, month=5)
 schedule = dn.week(info="schedule", weeks=-1)
 ```
 
-_Ещё больше примеров использования на странице [Wiki][wiki]._
+_Ещё больше примеров использования и параметров в методах смотрите на странице [Wiki][wiki]._
 
 ## Зависимости
 
