@@ -3,7 +3,7 @@
 > Модуль для работы с сайтом dnevnik.ru на python
 
 Объект dnevnik принимает в себя login и password от аккаунта в дневнике <br/>
-Методы: homework, marks, searchpeople, birthdays
+Методы: homework, marks, searchpeople, birthdays, week
 
 ## Установка
 
@@ -46,7 +46,7 @@ pip install -r requirements.txt
 
 ## Связь
 
-Alexandr – [@paracosm17](https://t.me/paracosm17) – paracosm17@yandex.ru <br>
+Aleksandr – tg: [@paracosm17](https://t.me/paracosm17) – email: paracosm17@yandex.ru <br>
 <br>
 Contributors: <br>
 <br>
