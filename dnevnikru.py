@@ -120,7 +120,7 @@ class Dnevnik:
         link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
         if "Домашних заданий не найдено." in homework_response:
-            return ["Домашних заданий не найдено!"]
+            return {"homeworkCount": 0, "homework": ()}
         last_page = Utils.last_page(homework_response)
 
         if last_page is not None:
@@ -130,16 +130,16 @@ class Dnevnik:
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2], i[0].strip(),
                                " ".join([_.strip() for _ in i[3].split()])]
-                    subjects.append(subject)
-            return subjects
+                    subjects.append(tuple(subject))
+            return {"homeworkCount": len(subjects), "homework": tuple(subjects)}
         if last_page is None:
             try:
                 subjects = []
                 for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2], i[0].strip(),
                                " ".join([_.strip() for _ in i[3].split()])]
-                    subjects.append(subject)
-                return subjects
+                    subjects.append(tuple(subject))
+                return {"homeworkCount": len(subjects), "homework": tuple(subjects)}
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
@@ -158,7 +158,7 @@ class Dnevnik:
             marks = Utils.save_content(response=marks_response, class2='grid gridLines vam marks')
             for mark in marks:
                 mark[2] = mark[2].replace(" ", "")
-            return marks
+            return tuple(marks)
         except Exception as e:
             raise DnevnikError(e, "DnevnikError")
 
@@ -177,7 +177,7 @@ class Dnevnik:
         link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
         if "Никого не найдено. Измените условия поиска." in searchpeople_response:
-            return ["Никого не найдено. Измените условия поиска."]
+            return {"peopleCount": 0, "people": ()}
         last_page = Utils.last_page(searchpeople_response)
 
         if last_page is not None:
@@ -186,15 +186,15 @@ class Dnevnik:
                 members_response = self.main_session.get(link + f"&page={page}").text
                 for content in Utils.save_content(members_response, class2='people grid'):
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
-                    members.append(member)
-            return members
+                    members.append(tuple(member))
+            return {"peopleCount": len(members), "people": tuple(members)}
         if last_page is None:
             members = []
             try:
                 for content in Utils.save_content(searchpeople_response, class2='people grid'):
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
-                    members.append(member)
-                return members
+                    members.append(tuple(member))
+                return {"peopleCount": len(members), "people": tuple(members)}
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
@@ -215,7 +215,7 @@ class Dnevnik:
         link = Defaults.birthdays_link.value.format(self.school, day, month, group)
         birthdays_response = self.main_session.get(link).text
         if "в школе именинников нет." in birthdays_response:
-            return ["В этот день среди этой группы в школе именинников нет."]
+            return {"peopleCount": 0, "people": ()}
         last_page = Utils.last_page(birthdays_response)
 
         if last_page is not None:
@@ -224,17 +224,17 @@ class Dnevnik:
                 birthdays_response = self.main_session.get(link + f"&page={page}").text
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
-            return birthdays
+            return {"birthdaysCount": len(birthdays), "birthdays": tuple(birthdays)}
         if last_page is None:
             birthdays = []
             try:
                 for i in Utils.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
-                return birthdays
+                return {"birthdaysCount": len(birthdays), "birthdays": tuple(birthdays)}
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
-    def week(self, info, weeks=0):
+    def week(self, info="schedule", weeks=0):
         """
         info - "themes", "attendance", "marks", "schedule", "homeworks"
         weeks - По умолчанию текущая неделя
@@ -252,10 +252,19 @@ class Dnevnik:
         item = item.format("list") if info != "schedule" else item.format("schedule")
         week_response = Utils.get_week_response(session=self.main_session,
                                                 school=self.school, weeks=weeks)
+        week = {}
         soup = BeautifulSoup(week_response, 'lxml')
-        title = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text
+        student = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text
         h = soup.find_all("div", {"class": head})[0]
         all_li = h.findAll("li", {"class": item})
-        week = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
-        return [title] + week
+        if info == "schedule":
+            for li in all_li:
+                day = li.find("div").text
+                schedule = li.findAll("li")
+                schedule = [x.text for x in schedule]
+                week.update({day: tuple(schedule)})
+            return {"student": student, "schedule": week}
+        else:
+            week = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
+            return {"student": student, info: tuple(week)}
 
