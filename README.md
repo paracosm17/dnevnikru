@@ -3,7 +3,7 @@
 > Модуль для работы с сайтом dnevnik.ru на python
 
 Объект dnevnik принимает в себя login и password от аккаунта в дневнике <br/>
-Методы: homework, marks, searchpeople, birthdays
+Методы: homework, marks, searchpeople, birthdays, week
 
 ## Установка
 
