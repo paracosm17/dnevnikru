@@ -2,22 +2,22 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/dnevnikru)](https://pypi.org/project/dnevnikru)
 # dnevnikru
 
-> Модуль для работы с сайтом dnevnik.ru на python
+> Module for working with the site dnevnik.ru with python
 
-Объект Dnevnik принимает в себя login и password от аккаунта в дневнике <br/>
-Методы: homework, marks, searchpeople, birthdays, week <br>
-##### Ознакомиться с полным функционалом модуля можно тут: [Wiki][wiki] <br>
-(Не работает в регионах, где вход в Дневник осуществляется только через ГосУслуги!)
-## Установка
+Dnevnik object accepts login and password from the dnevnik.ru account <br/>
+Methods: homework, marks, searchpeople, birthdays, week <br>
+##### Read the full functionality of the module here: [Wiki][wiki] <br>
+(Doesn't work in regions where you can enter the Diary only through GosUslugi !)
+## Installation
 
 Windows:
 
-Выполните в терминале команду: <br>
+Run the command in the terminal: <br>
 ```cmd
 pip install dnevnikru
 ```
 
-## Примеры использования
+## Examples of use
 
 ```python
 from dnevnikru import Dnevnik
@@ -26,23 +26,22 @@ dairy = Dnevnik(login='Your login', password='Your password')
 
 homework = dairy.homework(studyyear=2020, datefrom='01.12.2020', dateto='30.12.2020')
 marks = dairy.marks(index=0, period=1)
-class_11b = dairy.searchpeople(grade='11Б')
+class_11b = dairy.searchpeople(grade='11B')
 birthdays = dairy.birthdays(day=9, month=5)
 schedule = dairy.week(info="schedule", weeks=-1)
 ```
 
-#### _Ещё больше примеров использования и параметров в методах смотрите на странице [Wiki][wiki]._
+#### _For more examples of uses and parameters in methods, see [Wiki][wiki]._
 
-## Зависимости
+## Requires
 
-Для работы модуля понадобятся библиотеки `requests`, `lxml`, `bs4`
+The module requires `requests`, `lxml`, `bs4` libraries
 
-## Релизы
+## Releases
 
 * 1.0
-  * Первая версия проекта
 
-## Связь
+## Contact
 
 Aleksandr – tg: [@paracosm17](https://t.me/paracosm17) – email: paracosm17@yandex.ru <br>
 
