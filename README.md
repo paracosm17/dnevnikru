@@ -10,7 +10,7 @@
 
 Windows:
 
-Поместите файл ```dnevnikru.py``` в папку с вашим проектом
+Откройте терминал и пропишите ```pip install dnevnikru```
 
 ```python
 from dnevnikru import Dnevnik
