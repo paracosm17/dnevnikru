@@ -1,82 +1,13 @@
-import enum
+from dnevnikru import settings
 import requests
 from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
-import urllib.parse
-
-
-class Defaults(enum.Enum):
-    """
-    Дефолтные значения для параметров и ссылок
-    """
-    dateFrom = date.today().strftime("%d.%m.%Y")
-    dateTo = (date.today() + timedelta(days=10)).strftime("%d.%m.%Y")
-    studyYear = date.today().strftime("%Y")
-    day = date.today().day
-    month = date.today().month
-    choose = urllib.parse.quote("Показать")
-    base_link = "https://schools.dnevnik.ru/"
-    hw_link = "".join((base_link, "homework.aspx?school={}&tab=&studyYear={}&subject=&datefrom={}&dateto={}&choose=", choose))
-    marks_link = "".join((base_link, "marks.aspx?school={}&index={}&tab=period&period={}&homebasededucation=False"))
-    searchpeople_link = "".join((base_link, "school.aspx?school={}&view=members&group={}&filter=&search={}&class={}"))
-    birthdays_link = "".join((base_link, "birthdays.aspx?school={}&view=calendar&action=day&day={}&month={}&group={}"))
-    week_link = "https://dnevnik.ru/currentprogress/choose?userComeFromSelector=True"
 
 
 class DnevnikError(Exception):
     def __init__(self, message, errors):
         super().__init__(message)
         self.errors = f'DnevnikException[{errors}]'
-
-
-class Utils:
-    @staticmethod
-    def last_page(response):
-        try:
-            soup = BeautifulSoup(response, 'lxml')
-            all_pages = soup.find('div', {'class': 'pager'})
-            pages = all_pages.find_all('li')
-            last_page = pages[-1].text
-            return last_page
-        except Exception:
-            return None
-
-    @staticmethod
-    def save_content(response, class2):
-        soup = BeautifulSoup(response, 'lxml')
-        table = soup.find('table', {'class': class2})
-        content = []
-        all_rows = table.findAll('tr')
-        for row in all_rows:
-            content.append([])
-            all_cols = row.findAll('td')
-            for col in all_cols:
-                the_strings = [str(s) for s in col.findAll(text=True)]
-                the_text = ''.join(the_strings)
-                content[-1].append(the_text)
-        content = [a for a in content if a != []]
-        return tuple(content)
-
-    @staticmethod
-    def get_week_response(session, school, weeks):
-        link = Defaults.week_link.value
-        data_response = session.get(link).text
-        day = datetime.strptime(Defaults.dateFrom.value, "%d.%m.%Y") + timedelta(7 * weeks)
-        weeks_list = []
-        week = date(2021, 7, 19)
-        for _ in range(35):
-            week = week + timedelta(7)
-            weeks_list.append(week.strftime("%d.%m.%Y"))
-        for i in weeks_list:
-            if day <= datetime.strptime(i, "%d.%m.%Y"):
-                week = weeks_list[weeks_list.index(i) - 1]
-                break
-        soup = BeautifulSoup(data_response, 'lxml')
-        user_id = soup.find('option')["value"]
-        link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
-            user_id, school, Defaults.studyYear.value, week)
-        week_response = session.get(link).text
-        return week_response
 
 
 class Dnevnik:
@@ -97,8 +28,65 @@ class Dnevnik:
         except Exception:
             raise DnevnikError('Неверный логин или пароль!', 'LoginError')
 
-    def homework(self, datefrom=Defaults.dateFrom.value, dateto=Defaults.dateTo.value,
-                 studyyear=Defaults.studyYear.value, days=10):
+    @staticmethod
+    def last_page(self, response):
+        """
+        Функция для получения номера последней страницы
+        """
+        try:
+            soup = BeautifulSoup(response, 'lxml')
+            all_pages = soup.find('div', {'class': 'pager'})
+            pages = all_pages.find_all('li')
+            last_page = pages[-1].text
+            return last_page
+        except:
+            return None
+
+    @staticmethod
+    def save_content(self, response, class2):
+        """
+        Функция для парсинга и сохранения таблиц с сайта
+        """
+        soup = BeautifulSoup(response, 'lxml')
+        table = soup.find('table', {'class': class2})
+        content = []
+        all_rows = table.findAll('tr')
+        for row in all_rows:
+            content.append([])
+            all_cols = row.findAll('td')
+            for col in all_cols:
+                the_strings = [str(s) for s in col.findAll(text=True)]
+                the_text = ''.join(the_strings)
+                content[-1].append(the_text)
+        content = [a for a in content if a != []]
+        return tuple(content)
+
+    @staticmethod
+    def get_week_response(self, session, school, weeks):
+        """
+        Функция для получения html страницы с результатами недели
+        """
+        link = settings.WEEK_LINK
+        data_response = session.get(link).text
+        day = datetime.strptime(settings.DATEFROM, "%d.%m.%Y") + timedelta(7 * weeks)
+        weeks_list = []
+        week = date(2021, 7, 19)
+        for _ in range(35):
+            week = week + timedelta(7)
+            weeks_list.append(week.strftime("%d.%m.%Y"))
+        for i in weeks_list:
+            if day <= datetime.strptime(i, "%d.%m.%Y"):
+                week = weeks_list[weeks_list.index(i) - 1]
+                break
+        soup = BeautifulSoup(data_response, 'lxml')
+        user_id = soup.find('option')["value"]
+        link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
+            user_id, school, settings.STUDYYEAR, week)
+        week_response = session.get(link).text
+        return week_response
+
+    def homework(self, datefrom=settings.DATEFROM, dateto=settings.DATETO,
+                 studyyear=settings.STUDYYEAR, days=10):
         """
         Возвращает список домашней работы
         Можно передать дату начала, дату конца
@@ -109,7 +97,7 @@ class Dnevnik:
         :param days:
         :return:
         """
-        if datefrom != Defaults.dateFrom.value or days != 10:
+        if datefrom != settings.DATEFROM or days != 10:
             dt = datetime.strptime(datefrom, '%d.%m.%Y')
             dateto = (dt + timedelta(days=days)).strftime("%d.%m.%Y")
         if len(datefrom) != 10 or len(dateto) != 10:
@@ -117,17 +105,17 @@ class Dnevnik:
         if str(studyyear) not in datefrom:
             raise DnevnikError("StudyYear должен соответствовать datefrom", "Parameters error")
 
-        link = Defaults.hw_link.value.format(self.school, studyyear, datefrom, dateto)
+        link = settings.HW_LINK.format(self.school, studyyear, datefrom, dateto)
         homework_response = self.main_session.get(link, headers={"Referer": link}).text
         if "Домашних заданий не найдено." in homework_response:
             return {"homeworkCount": 0, "homework": ()}
-        last_page = Utils.last_page(homework_response)
+        last_page = self.last_page(self, homework_response)
 
         if last_page is not None:
             subjects = []
             for page in range(1, int(last_page) + 1):
                 homework_response = self.main_session.get(link + f"&page={page}", headers={"Referer": link}).text
-                for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
+                for i in self.save_content(self, homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2], i[0].strip(),
                                " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(tuple(subject))
@@ -135,7 +123,7 @@ class Dnevnik:
         if last_page is None:
             try:
                 subjects = []
-                for i in Utils.save_content(homework_response, class2='grid gridLines vam hmw'):
+                for i in self.save_content(self, homework_response, class2='grid gridLines vam hmw'):
                     subject = [i[2], i[0].strip(),
                                " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(tuple(subject))
@@ -152,10 +140,10 @@ class Dnevnik:
         :param period:
         :return:
         """
-        link = Defaults.marks_link.value.format(self.school, index, period)
+        link = settings.MARKS_LINK.format(self.school, index, period)
         marks_response = self.main_session.get(link, headers={"Referer": link}).text
         try:
-            marks = Utils.save_content(response=marks_response, class2='grid gridLines vam marks')
+            marks = self.save_content(self, response=marks_response, class2='grid gridLines vam marks')
             for mark in marks:
                 mark[2] = mark[2].replace(" ", "")
             return tuple(marks)
@@ -174,31 +162,31 @@ class Dnevnik:
         assert group in ['all', 'students', 'staff', 'director', 'management', 'teachers', 'administrators',
                          ""], "Неверная группа!"
 
-        link = Defaults.searchpeople_link.value.format(self.school, group, name, grade)
+        link = settings.SEARCHPEOPLE_LINK.format(self.school, group, name, grade)
         searchpeople_response = self.main_session.get(link).text
         if "Никого не найдено. Измените условия поиска." in searchpeople_response:
             return {"peopleCount": 0, "people": ()}
-        last_page = Utils.last_page(searchpeople_response)
+        last_page = self.last_page(self, searchpeople_response)
 
         if last_page is not None:
             members = []
             for page in range(1, int(last_page) + 1):
                 members_response = self.main_session.get(link + f"&page={page}").text
-                for content in Utils.save_content(members_response, class2='people grid'):
+                for content in self.save_content(self, members_response, class2='people grid'):
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
                     members.append(tuple(member))
             return {"peopleCount": len(members), "people": tuple(members)}
         if last_page is None:
             members = []
             try:
-                for content in Utils.save_content(searchpeople_response, class2='people grid'):
+                for content in self.save_content(self, searchpeople_response, class2='people grid'):
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
                     members.append(tuple(member))
                 return {"peopleCount": len(members), "people": tuple(members)}
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
-    def birthdays(self, day: int = Defaults.day.value, month: int = Defaults.month.value, group=""):
+    def birthdays(self, day: int = settings.DAY, month: int = settings.MONTH, group=""):
         """
         Возвращает список людей у кого в этот день день рождения
         По умолчанию текущая дата
@@ -212,23 +200,23 @@ class Dnevnik:
         assert group in ['all', 'students', 'staff', 'class', ''], "Неверная группа!"
         assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
 
-        link = Defaults.birthdays_link.value.format(self.school, day, month, group)
+        link = settings.BIRTHDAYS_LINK.format(self.school, day, month, group)
         birthdays_response = self.main_session.get(link).text
         if "в школе именинников нет." in birthdays_response:
             return {"peopleCount": 0, "people": ()}
-        last_page = Utils.last_page(birthdays_response)
+        last_page = self.last_page(self, birthdays_response)
 
         if last_page is not None:
             birthdays = []
             for page in range(1, int(last_page) + 1):
                 birthdays_response = self.main_session.get(link + f"&page={page}").text
-                for i in Utils.save_content(birthdays_response, class2='people grid'):
+                for i in self.save_content(self, birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
             return {"birthdaysCount": len(birthdays), "birthdays": tuple(birthdays)}
         if last_page is None:
             birthdays = []
             try:
-                for i in Utils.save_content(birthdays_response, class2='people grid'):
+                for i in self.save_content(self, birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
                 return {"birthdaysCount": len(birthdays), "birthdays": tuple(birthdays)}
             except Exception as e:
@@ -250,8 +238,8 @@ class Dnevnik:
         head = "current-progress-{}".format(info)
         item = "current-progress-{}__item"
         item = item.format("list") if info != "schedule" else item.format("schedule")
-        week_response = Utils.get_week_response(session=self.main_session,
-                                                school=self.school, weeks=weeks)
+        week_response = self.get_week_response(self, session=self.main_session,
+                                               school=self.school, weeks=weeks)
         week = {}
         soup = BeautifulSoup(week_response, 'lxml')
         student = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text
@@ -267,4 +255,3 @@ class Dnevnik:
         else:
             week = [i.replace("\n", " ").strip(" ") for i in [i.text for i in all_li]]
             return {"student": student, info: tuple(week)}
-
