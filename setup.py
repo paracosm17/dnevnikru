@@ -6,7 +6,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='dnevnikru',
-    version='1.0',
+    version='1.1',
     packages=['dnevnikru'],
     url='https://github.com/paracosm17/dnevnikru',
     license='Apache License 2.0',
