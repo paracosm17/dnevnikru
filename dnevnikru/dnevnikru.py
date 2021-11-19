@@ -43,21 +43,33 @@ class Dnevnik:
             return None
 
     @staticmethod
-    def save_content(self, response, class2):
+    def save_content(self, response, class2, map2 = {}):
         """
         Функция для парсинга и сохранения таблиц с сайта
+        map2: необязательный фильтр на колонки вида {1:(), 2:('tag'), 3:('tag', 'attr')}
         """
         soup = BeautifulSoup(response, 'lxml')
         table = soup.find('table', {'class': class2})
         content = []
+        the_text = ''
         all_rows = table.findAll('tr')
         for row in all_rows:
             content.append([])
             all_cols = row.findAll('td')
-            for col in all_cols:
-                the_strings = [str(s) for s in col.findAll(text=True)]
-                the_text = ''.join(the_strings)
-                content[-1].append(the_text)
+            for (col_i, col) in enumerate(all_cols):
+                if len(map2) == 0:
+                    the_strings = [str(s) for s in col.findAll(text=True)]
+                    the_text = ''.join(the_strings)
+                    content[-1].append(the_text)
+                else:
+                    if col_i in map2:
+                        if len(map2[col_i]) == 0:
+                            the_strings = [str(s) for s in col.findAll(text=True)]
+                            the_text = ''.join(the_strings)
+                            content[-1].append(the_text)
+                        else:
+                            the_text = tuple((s.text, s.attrs[map2[col_i][1]] if len(map2[col_i]) > 1 else '') for s in col.findAll(map2[col_i][0]))
+                            content[-1].append(the_text)
         content = [a for a in content if a != []]
         return tuple(content)
 
@@ -143,9 +155,7 @@ class Dnevnik:
         link = settings.MARKS_LINK.format(self.school, index, period)
         marks_response = self.main_session.get(link, headers={"Referer": link}).text
         try:
-            marks = self.save_content(self, response=marks_response, class2='grid gridLines vam marks')
-            for mark in marks:
-                mark[2] = mark[2].replace(" ", "")
+            marks = self.save_content(self, marks_response, class2='grid gridLines vam marks', {0:(),1:(),2:('span', 'title'),6:()})
             return tuple(marks)
         except Exception as e:
             raise DnevnikError(e, "DnevnikError")
