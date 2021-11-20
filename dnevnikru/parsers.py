@@ -1,24 +1,27 @@
 from dnevnikru import settings
-from bs4 import BeautifulSoup
-from datetime import date, timedelta, datetime
-from typing import Optional, Union
 from dnevnikru.exceptions import DnevnikError
+
+from bs4 import BeautifulSoup
+from typing import Optional, Union
+from datetime import date, timedelta, datetime
 
 
 class Parser:
     @staticmethod
     def last_page(response: str) -> Optional[int]:
+        """Функция для получения номера последней страницы (если она есть)"""
         try:
             soup = BeautifulSoup(response, 'lxml')
             all_pages = soup.find('div', {'class': 'pager'})
             pages = all_pages.find_all('li')
             last_page = pages[-1].text
             return last_page
-        except:
+        except AttributeError:
             return None
 
     @staticmethod
     def save_content(response: str, class2: str) -> tuple:
+        """Функция парсинга и сохранения таблиц с сайта"""
         soup = BeautifulSoup(response, 'lxml')
         table = soup.find('table', {'class': class2})
         content = []
@@ -35,6 +38,7 @@ class Parser:
 
     @staticmethod
     def get_week_response(session, school: Union[int, str], weeks: int) -> str:
+        """Функция для получения html страницы с результатами недели"""
         link = settings.WEEK_LINK
         data_response = session.get(link).text
         day = datetime.strptime(settings.DATEFROM, "%d.%m.%Y") + timedelta(7 * weeks)
@@ -56,6 +60,7 @@ class Parser:
 
     @staticmethod
     def get_homework(self, link: str, last_page: Union[str, int], homework_response: str) -> dict:
+        """Функция для получения домашних заданий"""
         if last_page is not None:
             subjects = []
             for page in range(1, int(last_page) + 1):
@@ -78,6 +83,7 @@ class Parser:
 
     @staticmethod
     def get_marks(marks_response: str) -> tuple:
+        """Функция для получения оценок"""
         try:
             marks = Parser.save_content(response=marks_response, class2='grid gridLines vam marks')
             for mark in marks:
@@ -88,6 +94,7 @@ class Parser:
 
     @staticmethod
     def search_people(self, last_page: Union[int, str], link: str, searchpeople_response: str) -> dict:
+        """Функция для поиска людей по школе"""
         if last_page is not None:
             members = []
             for page in range(1, int(last_page) + 1):
@@ -108,6 +115,7 @@ class Parser:
 
     @staticmethod
     def get_birthdays(self, birthdays_response: str, link: str) -> dict:
+        """Функция для поиска дней рождений по школе"""
         if "в школе именинников нет." in birthdays_response:
             return {"peopleCount": 0, "people": ()}
         last_page = Parser.last_page(birthdays_response)
@@ -130,6 +138,7 @@ class Parser:
 
     @staticmethod
     def get_week(self, info: str, weeks: int) -> dict:
+        """Функция для получения результатов недели"""
         head = "current-progress-{}".format(info)
         item = "current-progress-{}__item"
         item = item.format("list") if info != "schedule" else item.format("schedule")
