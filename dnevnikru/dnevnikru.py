@@ -10,7 +10,7 @@ import requests
 class Dnevnik:
     """Базовый класс Дневника"""
 
-    def __init__(self, login: str, password: str, /) -> None:
+    def __init__(self, login: str, password: str) -> None:
         self.__login, self.__password = login, password
         self._main_session = requests.Session()
         self._main_session.headers.update(settings.USER_AGENT)
