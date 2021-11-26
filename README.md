@@ -43,7 +43,7 @@ The module requires `requests`, `lxml`, `bs4` libraries
 
 ## Contact
 
-Aleksandr – tg: [@paracosm17](https://t.me/paracosm17) – email: paracosm17@yandex.ru <br>
+Aleksandr – tg: [@paracosm17](https://t.me/paracosm17) – email: paracosm17@aol.com <br>
 
 ## LICENSE
 Distributed under the Apache License 2.0 license. See ``LICENSE`` for more information.
