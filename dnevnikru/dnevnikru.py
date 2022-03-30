@@ -30,8 +30,6 @@ class Dnevnik:
             dateto = (days_count + timedelta(days=days)).strftime("%d.%m.%Y")
         if len(datefrom) != 10 or len(dateto) != 10:
             raise DnevnikError("Invalid dateto or datefrom", "Arguments error")
-        if str(studyyear) not in datefrom:
-            raise DnevnikError("StudyYear must match datefrom", "Arguments error")
 
         # Get homework
         link = settings.HW_LINK.format(self._school, studyyear, datefrom, dateto)
