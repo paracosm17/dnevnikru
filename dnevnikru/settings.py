@@ -1,11 +1,11 @@
 from datetime import date, timedelta, datetime
 import urllib.parse
 
-DATEFROM = date.today().strftime("%d.%m.%Y")
-DATETO = (date.today() + timedelta(days=10)).strftime("%d.%m.%Y")
-STUDYYEAR = date.today().strftime("%Y")
 DAY = date.today().day
 MONTH = date.today().month
+STUDYYEAR = date.today().strftime("%Y") if MONTH > 8 else int(date.today().strftime("%Y")) - 1
+DATEFROM = date.today().strftime("%d.%m.%Y")
+DATETO = (date.today() + timedelta(days=10)).strftime("%d.%m.%Y")
 CHOOSE = urllib.parse.quote("Показать")
 BASE_LINK = "https://schools.dnevnik.ru/"
 HW_LINK = "".join(
