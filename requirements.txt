@@ -1,3 +1,8 @@
-requests
+requests~=2.27.1
 lxml
-bs4
+bs4~=0.0.1
+
+setuptools~=58.2.0
+pydantic~=1.9.1
+beautifulsoup4~=4.10.0
+playwright~=1.22.0

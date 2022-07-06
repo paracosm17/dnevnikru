@@ -1,9 +1,11 @@
-from dnevnikru import settings
-from dnevnikru.exceptions import DnevnikError
+from datetime import date, timedelta, datetime
+from typing import Optional, Union
 
 from bs4 import BeautifulSoup
-from typing import Optional, Union
-from datetime import date, timedelta, datetime
+from requests import Session
+
+from dnevnikru import consts
+from dnevnikru.exceptions import DnevnikError
 
 
 class Parser:
@@ -37,11 +39,11 @@ class Parser:
         return tuple(content)
 
     @staticmethod
-    def get_week_response(session, school: Union[int, str], weeks: int) -> str:
+    def get_week_response(session: Session, school: int, weeks: int) -> str:
         """Функция для получения html страницы с результатами недели"""
-        link = settings.WEEK_LINK
+        link = consts.WEEK_LINK
         data_response = session.get(link).text
-        day = datetime.strptime(settings.DATEFROM, "%d.%m.%Y") + timedelta(7 * weeks)
+        day = datetime.strptime(consts.DATEFROM, "%d.%m.%Y") + timedelta(7 * weeks)
         weeks_list = []
         week = date(2021, 7, 19)
         for _ in range(35):
@@ -54,13 +56,16 @@ class Parser:
         soup = BeautifulSoup(data_response, 'lxml')
         user_id = soup.find('option')["value"]
         link = "https://dnevnik.ru/currentprogress/result/{}/{}/{}/{}?UserComeFromSelector=True".format(
-            user_id, school, settings.STUDYYEAR, week)
+            user_id, school, consts.STUDYYEAR, week)
         week_response = session.get(link).text
         return week_response
 
     @staticmethod
-    def get_homework(self, link: str, last_page: Union[str, int], homework_response: str) -> dict:
+    def get_homework(self, link: str, homework_response: str) -> tuple:
         """Функция для получения домашних заданий"""
+        if "Домашних заданий не найдено." in homework_response:
+            return {}
+        last_page = Parser.last_page(homework_response)
         if last_page is not None:
             subjects = []
             for page in range(1, int(last_page) + 1):
@@ -69,7 +74,7 @@ class Parser:
                     subject = [i[2], i[0].strip(),
                                " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(tuple(subject))
-            return {"homeworkCount": len(subjects), "homework": tuple(subjects)}
+            return tuple(subjects)
         if last_page is None:
             try:
                 subjects = []
@@ -77,7 +82,7 @@ class Parser:
                     subject = [i[2], i[0].strip(),
                                " ".join([_.strip() for _ in i[3].split()])]
                     subjects.append(tuple(subject))
-                return {"homeworkCount": len(subjects), "homework": tuple(subjects)}
+                return tuple(subjects)
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
@@ -93,8 +98,11 @@ class Parser:
             raise DnevnikError(e, "DnevnikError")
 
     @staticmethod
-    def search_people(self, last_page: Union[int, str], link: str, searchpeople_response: str) -> dict:
+    def search_people(self, link: str, searchpeople_response: str) -> Union[dict, tuple]:
         """Функция для поиска людей по школе"""
+        if "Никого не найдено. Измените условия поиска." in searchpeople_response:
+            return {}
+        last_page = Parser.last_page(searchpeople_response)
         if last_page is not None:
             members = []
             for page in range(1, int(last_page) + 1):
@@ -102,22 +110,22 @@ class Parser:
                 for content in Parser.save_content(members_response, class2='people grid'):
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
                     members.append(tuple(member))
-            return {"peopleCount": len(members), "people": tuple(members)}
+            return tuple(members)
         if last_page is None:
             members = []
             try:
                 for content in Parser.save_content(searchpeople_response, class2='people grid'):
                     member = [content[1].split('\n')[1], content[1].split('\n')[2]]
                     members.append(tuple(member))
-                return {"peopleCount": len(members), "people": tuple(members)}
+                return tuple(members)
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
     @staticmethod
-    def get_birthdays(self, birthdays_response: str, link: str) -> dict:
+    def get_birthdays(self, birthdays_response: str, link: str) -> Union[dict, tuple]:
         """Функция для поиска дней рождений по школе"""
         if "в школе именинников нет." in birthdays_response:
-            return {"peopleCount": 0, "people": ()}
+            return {}
         last_page = Parser.last_page(birthdays_response)
 
         if last_page is not None:
@@ -126,24 +134,24 @@ class Parser:
                 birthdays_response = self._main_session.get(link + f"&page={page}").text
                 for i in Parser.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
-            return {"birthdaysCount": len(birthdays), "birthdays": tuple(birthdays)}
+            return tuple(birthdays)
         if last_page is None:
             birthdays = []
             try:
                 for i in Parser.save_content(birthdays_response, class2='people grid'):
                     birthdays.append(i[1].split('\n')[1])
-                return {"birthdaysCount": len(birthdays), "birthdays": tuple(birthdays)}
+                return tuple(birthdays)
             except Exception as e:
                 raise DnevnikError(e, "DnevnikError")
 
     @staticmethod
-    def get_week(self, info: str, weeks: int) -> dict:
+    def get_week(session: Session, school: int, info: str, weeks: int) -> dict:
         """Функция для получения результатов недели"""
         head = "current-progress-{}".format(info)
         item = "current-progress-{}__item"
         item = item.format("list") if info != "schedule" else item.format("schedule")
-        week_response = Parser.get_week_response(session=self._main_session,
-                                                 school=self._school, weeks=weeks)
+        week_response = Parser.get_week_response(session=session,
+                                                 school=school, weeks=weeks)
         week = {}
         soup = BeautifulSoup(week_response, 'lxml')
         student = soup.findAll("h5", {"class": "h5 h5_bold"})[0].text

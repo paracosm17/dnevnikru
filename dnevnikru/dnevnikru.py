@@ -1,79 +1,68 @@
-from dnevnikru.exceptions import DnevnikError
-from dnevnikru.parsers import Parser
-from dnevnikru import settings
-
-from datetime import timedelta, datetime
+from typing import Optional
 from typing import Union
-import requests
+
+from dnevnikru import consts
+from dnevnikru.authorization import auth
+from dnevnikru.models import HomeworkArgsModel, HomeWorkModel, HomeWorkListModel, MarksArgsModel, MarksListModel, \
+    MarksModel, SearchPeopleArgs, PeopleModel, PeopleListModel, BirthdaysArgsModel, BirthdaysModel, BirthdaysListModel
+from dnevnikru.parsers import Parser
 
 
 class Dnevnik:
-    """Базовый класс Дневника"""
+    """""Базовый класс Дневника"""""
 
-    def __init__(self, login: str, password: str) -> None:
-        self.__login, self.__password = login, password
-        self._main_session = requests.Session()
-        self._main_session.headers.update(settings.USER_AGENT)
-        self._main_session.post('https://login.dnevnik.ru/login',
-                                data={"login": self.__login, "password": self.__password})
-        if self._main_session.cookies.get("t0"):
-            self._school = self._main_session.cookies.get("t0")
-            return
-        raise DnevnikError('Authorization error', 'LoginError')
+    def __init__(self, login: str, password: str, region: Optional[str] = None) -> None:
+        self._main_session, self._user_data = auth(login, password, region)
 
-    def homework(self, datefrom=settings.DATEFROM, dateto=settings.DATETO, studyyear=settings.STUDYYEAR,
+    def homework(self, datefrom: str = consts.DATEFROM, dateto: str = consts.DATETO,
                  days: int = 10) -> dict:
-        """Method for getting homework"""
-        # Checking the correctness of arguments
-        if datefrom != settings.DATEFROM or days != 10:
-            days_count = datetime.strptime(datefrom, '%d.%m.%Y')
-            dateto = (days_count + timedelta(days=days)).strftime("%d.%m.%Y")
-        if len(datefrom) != 10 or len(dateto) != 10:
-            raise DnevnikError("Invalid dateto or datefrom", "Arguments error")
-
-        # Get homework
-        link = settings.HW_LINK.format(self._school, studyyear, datefrom, dateto)
+        args = HomeworkArgsModel(datefrom=datefrom, dateto=dateto, days=days)
+        link = consts.HW_LINK.format(self._user_data.school, args.studyyear, args.datefrom, args.dateto)
         homework_response = self._main_session.get(link, headers={"Referer": link}).text
-        if "Домашних заданий не найдено." in homework_response:
-            return {"homeworkCount": 0, "homework": ()}
-        last_page = Parser.last_page(homework_response)
-        return Parser.get_homework(self, link=link, last_page=last_page, homework_response=homework_response)
+        homework = Parser.get_homework(self, link=link, homework_response=homework_response)
+        homework = HomeWorkListModel(homework=[HomeWorkModel(subject=i[0], work=i[1], date=i[2]) for i in homework])
+        return homework.dict()
 
-    def marks(self, index: Union[str, int] = "", period: Union[str, int] = "") -> tuple:
-        """Method for getting marks"""
-        # Get marks
-        link = settings.MARKS_LINK.format(self._school, index, str(period))
+    def marks(self, index: Union[int, str] = '', period: Union[int, str] = '') -> dict:
+        args_model = MarksArgsModel(index=index, period=period)
+        link = consts.MARKS_LINK.format(self._user_data.school, args_model.index, args_model.period)
         marks_response = self._main_session.get(link, headers={"Referer": link}).text
-        return Parser.get_marks(marks_response=marks_response)
+        mark = Parser.get_marks(marks_response=marks_response)
+        marks = []
+        for i in mark:
+            marks.append(MarksModel(
+                id=i[0],
+                subject=i[1],
+                marks=list(i[2]),
+                lateness=i[3],
+                all_passes=i[4],
+                sick_passes=i[5],
+                average_mark=i[6],
+                final_mark=i[7]
+            ))
+        return MarksListModel(marks=marks).dict()
 
-    def searchpeople(self, group: str = "", name: str = "", grade: Union[str, int] = "") -> dict:
-        """Method for getting people from user's school"""
-        # Checking the correctness of arguments
-        assert group in settings.PEOPLE_GROUPS, "Неверная группа!"
+    def searchpeople(self, group: str = '', name: str = '',
+                     grade: Union[int, str] = '') -> dict:
+        searchpeople_model = SearchPeopleArgs(group=group, name=name, grade=grade)
+        link = consts.SEARCHPEOPLE_LINK.format(self._user_data.school, searchpeople_model.group,
+                                                 searchpeople_model.name, searchpeople_model.grade)
 
-        # Get people
-        link = settings.SEARCHPEOPLE_LINK.format(self._school, group, name, str(grade))
         searchpeople_response = self._main_session.get(link).text
-        if "Никого не найдено. Измените условия поиска." in searchpeople_response:
-            return {"peopleCount": 0, "people": ()}
-        last_page = Parser.last_page(searchpeople_response)
-        return Parser.search_people(self, last_page=last_page, link=link, searchpeople_response=searchpeople_response)
+        people = Parser.search_people(self, link=link, searchpeople_response=searchpeople_response)
+        people = PeopleListModel(people=[PeopleModel(name=i[0], role=i[1]) for i in people])
 
-    def birthdays(self, day: int = settings.DAY, month: int = settings.MONTH, group: str = "") -> dict:
-        """Method for getting birthdays"""
-        # Checking the correctness of arguments
-        assert group in settings.BIRTHDAYS_GROUPS, "Неверная группа!"
-        assert day in list(range(1, 32)) or month not in list(range(1, 13)), "Неверный день или месяц!"
+        return people.dict()
 
-        # Get birthdays
-        link = settings.BIRTHDAYS_LINK.format(self._school, day, month, group)
+    def birthdays(self, day: int = consts.DAY, month: int = consts.MONTH, group: str = '') -> dict:
+        birthdays_model = BirthdaysArgsModel(day=day, month=month, group=group)
+        link = consts.BIRTHDAYS_LINK.format(self._user_data.school, birthdays_model.day, birthdays_model.month,
+                                              birthdays_model.group)
         birthdays_response = self._main_session.get(link).text
-        return Parser.get_birthdays(self, birthdays_response=birthdays_response, link=link)
+        birthdays = Parser.get_birthdays(self, birthdays_response=birthdays_response, link=link)
+        birthdays = BirthdaysListModel(date=f'{birthdays_model.day}.{birthdays_model.month}',
+                                       birthdays=[BirthdaysModel(name=i) for i in birthdays])
+        return birthdays.dict()
 
-    def week(self, info: str = "schedule", weeks: int = 0) -> dict:
-        """Method for getting week"""
-        # Checking the correctness of arguments
-        assert info in settings.WEEK_INFORMATION, 'Invalid info'
-
-        # get week
-        return Parser.get_week(self, info=info, weeks=weeks)
+    def week(self, info: consts.WEEK_INFORMATION = 'schedule', weeks: int = 0) -> dict:
+        return Parser.get_week(session=self._main_session, school=self._user_data.school, info=info, weeks=weeks)
